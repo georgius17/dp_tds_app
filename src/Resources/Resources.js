@@ -2,6 +2,16 @@ export const Resources = {
     Routes: {
 
     },
+    AddObjects: {
+        Graph: "Přidat graf",
+        Table: "Přidat tabulku",
+        Map: "Přidat mapu"
+    },
+    ObjectActions: {
+        Delete: "Vymazat objekt",
+        Export: "Exportovat objekt",
+        ChangeData: "Změnit data"
+    },
     GraphItems: {
         Options: "Nastavení",
         Add: "Přidat graf",

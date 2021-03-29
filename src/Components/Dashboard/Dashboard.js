@@ -7,16 +7,20 @@ import { ValidateJSON } from '../UI/ValidateJSON';
 import { DataModal } from './DataModal/DataModal';
 import { JSONConverter } from './JSONConverter';
 import { UploadedData } from './UploadedData/UploadedData';
-import ColorPicker from "react-pick-color";
+import { DataMap } from './DataMap/DataMap';
+import { DataTable } from './DataTable/DataTable';
+import { DataOptions } from './DataOptions/DataOptions';
+import { TimeGenerator } from './TimeGenerator';
+import { ObjectConstants } from '../../Components/Constants/ObjectConstants';
+import { SensorConstants } from '../../Components/Constants/SensorConstants';
 import classes from './Dashboard.module.css';
 
 const Dashboard = (props) => {
 
-    const [sensorData, setSensorData] = React.useState([]);
-    const [selectedFile, setSelectedFile] = React.useState(null);
-    const [objects, setObjects] = React.useState([]);
-    const [displayedObjects, setDisplayedObjects] = React.useState([]);
-
+    const [sensorData, setSensorData] = React.useState([]); //transformed data from JSON
+    const [selectedFile, setSelectedFile] = React.useState(null); 
+    const [objects, setObjects] = React.useState([]); //options and data origin for charts/tables/map
+    const [displayedObjects, setDisplayedObjects] = React.useState([]); //object instances, refs
     const [showModal, setShowModal] = React.useState(false);
     const [showUploadedData, setShowUploadedData] = React.useState(false);
     const [selectedObjectID, setSelectedObjectID] = React.useState(null);
@@ -56,7 +60,8 @@ const Dashboard = (props) => {
             setSensorData([{
                 location_values: extractedData.chartLocation,
                 tds_values: extractedData.chartSensor,
-                temp_values: extractedData.chartTemp
+                temp_values: extractedData.chartTemp,
+                time_values: TimeGenerator(selectedFile.length)
             }]);
         } else {
 
@@ -65,13 +70,15 @@ const Dashboard = (props) => {
                 uploadedData.push({
                     location_values: i.location_values,
                     tds_values: i.tds_values,
-                    temp_values: i.temp_values
+                    temp_values: i.temp_values,
+                    time_values: TimeGenerator(selectedFile.length)
                 })
             });
             uploadedData.push({
                 location_values: extractedData.chartLocation,
                 tds_values: extractedData.chartSensor,
-                temp_values: extractedData.chartTemp
+                temp_values: extractedData.chartTemp,
+                time_values: TimeGenerator(selectedFile.length)
             })
             console.log(uploadedData);
             setSensorData(uploadedData);
@@ -93,44 +100,78 @@ const Dashboard = (props) => {
 
     React.useEffect(() => {
         if (objects.length === 0) return;
-       // console.log(objects);
-
-        // let newObject = [...objects].pop();
-        // let newGraph = addNewChart(newObject);
-        // setDisplayedObjects([...displayedObjects, newGraph]);
 
         const newDisplayedObjects = [];
         displayedObjects.map(o => {
             o.object.destroy();
-        })
+        });
         objects.map(o => {
-            let newGraph = addNewChart(o);  
-            newDisplayedObjects.push(newGraph);
+            if (o.objectType === ObjectConstants.Types.Graph) {
+                let newGraph = addNewChart(o);  
+                newDisplayedObjects.push(newGraph);
+            }
         });
         setDisplayedObjects([...newDisplayedObjects]);
 
     }, [objects]);
 
-    const addChart = () => {
-        const newObject = {
-            id : objects.length,
-            ref : React.createRef(),
-            type: "line",
-            data: {
-                x: [],
-                y: []
-            },
-            colors: {
-                x: 'rgba(75,192,192, 0.4)',
-                y: 'rgba(75,192,192, 0.4)'
-            },
-            title: '',
-            note: '',
-            legend: '',
-            xLabel: '',
-            yLabel: ''
-            
-        };
+    //TYPE = "graph" || "table" || "map"
+    const addObject = (type) => {
+        let newObject = {};
+
+        if (type === ObjectConstants.Types.Graph) {
+            newObject = {
+                objectType: ObjectConstants.Types.Graph,
+                id : objects.length,
+                ref : React.createRef(),
+                type: "line",
+                data: {
+                    x: [],
+                    y: []
+                },
+                colors: {
+                    x: 'rgba(75,192,192, 0.4)',
+                    y: 'rgba(75,192,192, 0.4)'
+                },
+                title: '',
+                note: '',
+                legend: '',
+                xLabel: '',
+                yLabel: ''
+            };
+        }
+
+        if (type === ObjectConstants.Types.Map) {
+            newObject = {
+                objectType: ObjectConstants.Types.Map,
+                id : objects.length,
+                coords: [
+                    // { 'lat': 49.329636, 'lng': 17.777622 },
+                    // { 'lat': 49.330636, 'lng': 17.777622 },
+                    // { 'lat': 49.331636, 'lng': 17.777622 }
+                  ],
+                title: '',
+                note: '',
+            }
+            changeDataModal(newObject.id);
+        }
+
+        if (type === ObjectConstants.Types.Table) {
+            newObject = {
+                objectType: ObjectConstants.Types.Table,
+                id : objects.length,
+                columns: [
+                    {field: 'id', headerName: SensorConstants.Values.id_values},
+                    {field: 'gps', headerName: SensorConstants.Values.location_values},
+                    {field: 'tds', headerName: SensorConstants.Values.tds_values},
+                    {field: 'temp', headerName: SensorConstants.Values.temp_values},
+                    {field: 'time', headerName: SensorConstants.Values.time_values},
+                ],
+                rows: [
+                    { id: 1, gps: 'Snow', tds: 'Jon', temp: 35, time: 20 },
+                ]                
+            }
+        }
         setObjects([...objects, newObject]);
         //CALL USE-EFFECT ONCHANGE OBJECTS -> addNewChart
     }
@@ -197,18 +238,24 @@ const Dashboard = (props) => {
         setObjects([...filteredObjects]);
     }
 
-    const changeDataChart = (id) => {
+    const changeDataModal = (id) => {
         setSelectedObjectID(id);
         setShowModal(true);
     }
 
-    const changeObjectAxeData = (axe, values) => {
+    const changeObjectData = (type, values) => {
         let object = objects.find(x => x.id === selectedObjectID);
-        if (axe === "X") {
+        if (type === "X") {
             object.data.x = values;
         } 
-        if (axe === "Y") {
+        if (type === "Y") {
             object.data.y = values;
+        }
+        if (type === "coords") {
+            object.coords = values;
+        }
+        if (type === "rows") {
+            object.rows = values;
         }
         setObjects([...objects]);
     }
@@ -238,10 +285,15 @@ const Dashboard = (props) => {
         setObjects([...objects]);
     }
 
-    const exportChart = (id) => {
+    const exportChart = (id, objectType) => {
+
+        if (objectType !== ObjectConstants.Types.Graph) return;
+
         let canvas = document.getElementById(id);
         let image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-        window.location.href=image;
+       
+        let w=window.open('about:blank','image from canvas');
+        w.document.write("<img src='"+image+"' alt='from canvas'/>");
     }
 
     return (
@@ -262,9 +314,17 @@ const Dashboard = (props) => {
                         />
                         {sensorData.length === 0 ? 'Nahrát soubor' : 'Nahrát další soubor'}
                     </label>
-                    <Button className="m-1" onClick={()=>addChart()}>
-                        {Resources.GraphItems.Add}
-                    </Button>
+
+                    <Dropdown className="m-1">
+                        <Dropdown.Toggle variant="secondary">
+                            Přidat objekt
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                            <Dropdown.Item onClick={()=>addObject(ObjectConstants.Types.Graph)}>{Resources.AddObjects.Graph}</Dropdown.Item>
+                            <Dropdown.Item onClick={()=>addObject(ObjectConstants.Types.Table)}>{Resources.AddObjects.Table}</Dropdown.Item>
+                            <Dropdown.Item onClick={()=>addObject(ObjectConstants.Types.Map)}>{Resources.AddObjects.Map}</Dropdown.Item>
+                        </Dropdown.Menu>
+                    </Dropdown>
 
                     {sensorData.length !== 0 && 
                         <Button className="m-1" onClick={() => setShowUploadedData(!showUploadedData)}> 
@@ -283,36 +343,51 @@ const Dashboard = (props) => {
 
             {objects.map(o => {
                 return (
-                    <Col className="mt-1" lg="6" id={"col"+o.id} key={o.id}>
-                        <Dropdown>
-                            <Dropdown.Toggle variant="success" id="dropdown-basic">
-                                {Resources.GraphItems.Options}
-                            </Dropdown.Toggle>
+                    <Col className="mt-5" lg="6" id={"col"+o.id} key={o.id}>
+                        <DataOptions
+                            objectType={o.objectType} 
+                            onChangeChartType={(type) => changeChartType(o.id, type)}
+                            onDelete={() => deleteChart(o.id)}
+                            onExport={() => exportChart(o.id, o.objectType)}
+                            onDataChange={() => changeDataModal(o.id)}
+                        />
 
-                            <Dropdown.Menu>
-                                <Dropdown.Item onClick={()=>changeChartType(o.id, "doughnut")}>{Resources.GraphItems.Doughnut}</Dropdown.Item>
-                                <Dropdown.Item onClick={()=>changeChartType(o.id, "line")}>{Resources.GraphItems.Line}</Dropdown.Item>
-                                <Dropdown.Item onClick={()=>changeChartType(o.id, "bar")}>{Resources.GraphItems.Bar}</Dropdown.Item>
-                                <Dropdown.Item onClick={()=>deleteChart(o.id)}>{Resources.GraphItems.Delete}</Dropdown.Item>
-                                <Dropdown.Item onClick={()=>changeDataChart(o.id)}>{Resources.GraphItems.ChangeData}</Dropdown.Item>
-                                <Dropdown.Item onClick={()=>exportChart(o.id)}>{Resources.GraphItems.Export}</Dropdown.Item>
-                            </Dropdown.Menu>
-                        </Dropdown>
-                         <canvas id={o.id} ref={o.ref}  />
-                         <h6>{o.note}</h6>
+                        {o.objectType === ObjectConstants.Types.Graph && <canvas id={o.id} ref={o.ref} /> }
+                        
+                        {o.objectType === ObjectConstants.Types.Map && o.coords.length !== 0 ?
+                         <div>
+                            <h6>{o.title}</h6>
+                            <DataMap 
+                                coords={o.coords}
+                            />
+                            <h6>{o.note}</h6>
+                        </div> : o.objectType === ObjectConstants.Types.Map && o.coords.length === 0  && <h6>Přidejte data pro mapu</h6>
+                        }
+                        {o.objectType === ObjectConstants.Types.Table && 
+                            <DataTable
+                                id={o.id}
+                                rows={o.rows}
+                                columns={o.columns} 
+                            />
+                        }
+
                     </Col>
                 )
             })}
+
+            {objects.length !== 0 && selectedObjectID !== "" && objects[selectedObjectID] !== undefined && 
             <DataModal 
                 show={showModal} 
                 objectID={selectedObjectID !== null ? selectedObjectID : ""}
-                onDataChange={(axe, values) => changeObjectAxeData(axe, values)} 
+                onDataChange={(type, values) => changeObjectData(type, values)} 
                 onClose={()=>setShowModal(false)}
                 onSetColor={(hex) => changeAxeColor(hex)}
                 onTextChanged={(type, note) => changeText(type, note)}
                 objectData={objects.find(x => x.id === selectedObjectID)}
                 data={sensorData} 
+                selectedFile={selectedFile}
                 />
+                }
         </Row>
     )
 }

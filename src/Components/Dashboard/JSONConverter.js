@@ -13,17 +13,26 @@ export const JSONConverter = (file) => {
     for (let i = 0; i < file.length; i++) {
         if (file[i] === 'G' && file[i+1] === 'P') {
             GPS_temp = file.slice(i+5, i+35);
-            TEMP_temp = file.slice(i+42, i+50);
 
             let index = 0;
+
             for (let j = 0; j < 20; j++) {
-                
-                if (numbers.includes(file[i+55+j])) {
-                    index = i+55+j;
+                if (numbers.includes(file[i+42+j])) {
+                    index = i+42+j;
                 } else break;
             }
-            TDS_temp = file.slice(i+55, index+1);
-            DATE_temp = file.slice(index+11, index+30);
+
+            TEMP_temp = file.slice(i+42, index+1);
+
+           let index_TDS = 0;
+            for (let k = 0; k < 20; k++) {
+                
+                if (numbers.includes(file[index+6+k])) {
+                    index_TDS = index+5+k;
+                } else break;
+            }
+            TDS_temp = file.slice(index+6, index_TDS+2);
+            DATE_temp = file.slice(index_TDS+12, index_TDS+31);
 
             output.push({
                 GPS: GPS_temp,
