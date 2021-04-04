@@ -4,6 +4,7 @@ export const SensorConstants = {
         temp_values: "Teplota",
         location_values: "GPS",
         time_values: "Čas",
-        id_values: "ID"
+        id_values: "ID",
+        date_values: "Datum"
     }
 }

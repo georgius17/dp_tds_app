@@ -4,13 +4,19 @@ import { Row, Col, Dropdown, Button, Modal, InputGroup, FormControl, Accordion, 
 import { SensorConstants } from '../../Constants/SensorConstants';
 import { ObjectConstants } from '../../Constants/ObjectConstants';
 import ColorPicker from "react-pick-color";
+import classes from './DataModal.module.css';
 
 export const DataModal = (props) => {
     let sensorData = props.data;
     const [showDataindex, setShowDataindex] = React.useState(0);
+    const [dataCut, setDataCut] = React.useState(0);
+    
+    //Table options
     const [deletePreviousData, setDeletePreviousData] = React.useState(true);
-
     const [tableDataCount, setTableDataCount] = React.useState(0);
+
+    //Graph options
+    const [chosenAxes, setChosenAxes] = React.useState({x: null, y: null});
 
     const mutateLocationData = (data) => {
         let coords = [];
@@ -26,7 +32,22 @@ export const DataModal = (props) => {
         return coords;
     }
 
-    const tableColumns = [0, 1, 2, 3, 4];
+    // React.useEffect(() => {
+    //     if ()
+
+    // }, [props.data])
+
+    const dataCutReminder = () => {
+        if (props.data !== undefined && props.data.length > 1) {
+            let dataLengths = [];
+            for (let i = 0; i < props.data.length; i++ ) {
+                dataLengths.push(props.data[i].date_values.length);
+            }
+            const min = Math.min(...dataLengths);
+            
+            return <h6>Nejmenší počet záznamů ve všech nahraných souborech: {min}</h6>
+        }
+    }
 
     const mutateTableRows = () => {
         if (props.selectedFile === null || props.selectedFile === undefined) return
@@ -60,37 +81,65 @@ export const DataModal = (props) => {
 
         setTableDataCount(tableDataCount+1);
         console.log(uploadedRows);
-        props.onDataChange("rows", uploadedRows);
+        props.onDataChange("rows", uploadedRows, dataCut);
     }
+
+    React.useEffect(() => {
+        if (props.data !== undefined && props.data[showDataindex].date_values !== undefined) {
+            setDataCut(props.data[showDataindex].date_values.length);
+        }
+    }, [props.data])
     
     return (
-        <Modal show={props.show}>
+        <Modal className={classes.divModal} show={props.show}>
         <Modal.Header closeButton>
           <Modal.Title>{Resources.ModalItems.Options}{props.objectID+1}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+        {sensorData[showDataindex] !== undefined ?
+            <div className="d-flex flex-wrap align-items-md-center border-bottom ">
+                <Dropdown>
+                    <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic">
+                        {sensorData[showDataindex] !== undefined && <>Data č.{showDataindex + 1} </>}
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                    
+                    {sensorData !== undefined && sensorData.map((i, index) => {
+                        return (
+                            <Dropdown.Item 
+                                key={index}
+                                onClick={() => setShowDataindex(sensorData.indexOf(i))}
+                            > 
+                            Data č. {index + 1}
+                            </Dropdown.Item>
+                        )
+                    })}
+                    </Dropdown.Menu>
+                </Dropdown>
 
-            <Dropdown>
-                <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic">
-                    Vybrat data
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  
-                {sensorData !== undefined && sensorData.map((i, index) => {
-                    return (
-                        <Dropdown.Item 
-                            key={index}
-                            onClick={() => setShowDataindex(sensorData.indexOf(i))}
-                        > 
-                        Data č. {index + 1}
-                        </Dropdown.Item>
-                    )
-                })}
-                   
-                </Dropdown.Menu>
-            </Dropdown>
+                <p className="m-0 p-0 w-50">Počet záznamů vybranách dat: <strong>{sensorData[showDataindex].date_values.length}</strong></p>
 
-        {props.sensorData !== undefined && <h4> Data č.{showDataindex + 1} </h4>}
+                <InputGroup className="w-50 mb-2">
+                    <InputGroup.Prepend>
+                    <InputGroup.Text id="inputGroup-sizing-sm">Oříznutí záznamů</InputGroup.Text>
+                    </InputGroup.Prepend>
+                    <FormControl
+                        aria-label="Small"
+                        aria-describedby="inputGroup-sizing-sm"
+                        type="number"
+                        value={dataCut}
+                        onChange={(e) => {
+                            if (e.target.value <= sensorData[showDataindex].date_values.length)
+                            setDataCut(e.target.value)
+                        }}
+                    />
+                </InputGroup>
+                {sensorData[showDataindex].date_values.length != dataCut && <h6>Záznamy budou oříznuty při opakoveném nahrání</h6> }
+                {sensorData[showDataindex].date_values.length != dataCut && dataCutReminder()}
+            </div>
+        : <h6>Nahrejte data</h6>
+        }
+        <br />
 
         {/* Název objektu */}
         <InputGroup className="mb-3">
@@ -126,7 +175,7 @@ export const DataModal = (props) => {
             </Dropdown.Toggle>
                 {sensorData[showDataindex] !== undefined && 
                 <Dropdown.Menu>
-                    <Dropdown.Item onClick={()=> props.onDataChange("coords", mutateLocationData(sensorData[showDataindex].location_values) )}>
+                    <Dropdown.Item onClick={()=> props.onDataChange("coords", mutateLocationData(sensorData[showDataindex].location_values), dataCut )}>
                         {sensorData[showDataindex].location_values}
                     </Dropdown.Item>
                     {/* <Dropdown.Item 
@@ -158,13 +207,18 @@ export const DataModal = (props) => {
             {/* Data strany x */}
             <Dropdown>
                 <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic">
-                    {Resources.ModalItems.SelectX}
+                    {props.objectData.data.x.length === 0 ? Resources.ModalItems.SelectX : `Data pro osu X: ${SensorConstants.Values[chosenAxes.x]}`}
+                   
                 </Dropdown.Toggle>
                     {sensorData[showDataindex] !== undefined && 
                     <Dropdown.Menu>
                         {Object.keys(sensorData[showDataindex]).map((i, index) => {
                             return (
-                            <Dropdown.Item key={index} onClick={()=> props.onDataChange("X", sensorData[showDataindex][i])}>
+                            <Dropdown.Item key={index} onClick={() => {
+                                props.onDataChange("X", sensorData[showDataindex][i], dataCut)
+                                props.onTextChanged('xlabel', SensorConstants.Values[i])
+                                setChosenAxes((prevState) => ({...prevState, x: i}))
+                                }}>
                                 {SensorConstants.Values[i]}
                             </Dropdown.Item>
                             )
@@ -202,13 +256,17 @@ export const DataModal = (props) => {
             {/* Data strany Y */}
             <Dropdown>
                 <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic">
-                    {Resources.ModalItems.SelectY}
+                {props.objectData.data.y.length === 0 ? Resources.ModalItems.SelectY : `Data pro osu Y: ${SensorConstants.Values[chosenAxes.y]}`}
                 </Dropdown.Toggle>
                 {sensorData[showDataindex] !== undefined && 
                     <Dropdown.Menu>
                         {Object.keys(sensorData[showDataindex]).map((i, index) => {
                             return (
-                            <Dropdown.Item key={index} onClick={()=> props.onDataChange("Y", sensorData[showDataindex][i])}>
+                            <Dropdown.Item key={index} onClick={() => { 
+                                props.onDataChange("Y", sensorData[showDataindex][i], dataCut)
+                                props.onTextChanged('ylabel', SensorConstants.Values[i])
+                                setChosenAxes((prevState) => ({...prevState, y: i}))
+                                }}>
                                 {SensorConstants.Values[i]}
                             </Dropdown.Item>
                             )

@@ -61,7 +61,8 @@ const Dashboard = (props) => {
                 location_values: extractedData.chartLocation,
                 tds_values: extractedData.chartSensor,
                 temp_values: extractedData.chartTemp,
-                time_values: TimeGenerator(selectedFile.length)
+                time_values: TimeGenerator(selectedFile.length),
+                date_values: extractedData.chartDate
             }]);
         } else {
 
@@ -71,14 +72,16 @@ const Dashboard = (props) => {
                     location_values: i.location_values,
                     tds_values: i.tds_values,
                     temp_values: i.temp_values,
-                    time_values: TimeGenerator(selectedFile.length)
+                    time_values: TimeGenerator(selectedFile.length),
+                    date_values: i.date_values
                 })
             });
             uploadedData.push({
                 location_values: extractedData.chartLocation,
                 tds_values: extractedData.chartSensor,
                 temp_values: extractedData.chartTemp,
-                time_values: TimeGenerator(selectedFile.length)
+                time_values: TimeGenerator(selectedFile.length),
+                date_values: extractedData.chartDate
             })
             console.log(uploadedData);
             setSensorData(uploadedData);
@@ -90,12 +93,14 @@ const Dashboard = (props) => {
         let chartLocation = [];
         let chartSensor = [];
         let chartTemp = [];
+        let chartDate = [];
         data.map(i => {
             chartLocation.push(i.GPS);
             chartSensor.push(i.TDS);
             chartTemp.push(i.TEMP);
+            chartDate.push(i.DATE);
         })
-        return {chartLocation, chartSensor, chartTemp};
+        return {chartLocation, chartSensor, chartTemp, chartDate};
     }
 
     React.useEffect(() => {
@@ -145,11 +150,7 @@ const Dashboard = (props) => {
             newObject = {
                 objectType: ObjectConstants.Types.Map,
                 id : objects.length,
-                coords: [
-                    // { 'lat': 49.329636, 'lng': 17.777622 },
-                    // { 'lat': 49.330636, 'lng': 17.777622 },
-                    // { 'lat': 49.331636, 'lng': 17.777622 }
-                  ],
+                coords: [],
                 title: '',
                 note: '',
             }
@@ -243,8 +244,15 @@ const Dashboard = (props) => {
         setShowModal(true);
     }
 
-    const changeObjectData = (type, values) => {
+    const changeObjectData = (type, values, cutLength) => {
         let object = objects.find(x => x.id === selectedObjectID);
+        if (values.length != cutLength && cutLength < values.length) {
+            console.log("CUTTING LENGTH TO:")
+            console.log(cutLength);
+            values = values.slice(0, cutLength);
+            console.log("LENGTH OF CUTTED VALUES:");
+            console.log(values.length);
+        }
         if (type === "X") {
             object.data.x = values;
         } 
@@ -379,7 +387,7 @@ const Dashboard = (props) => {
             <DataModal 
                 show={showModal} 
                 objectID={selectedObjectID !== null ? selectedObjectID : ""}
-                onDataChange={(type, values) => changeObjectData(type, values)} 
+                onDataChange={(type, values, cutLength) => changeObjectData(type, values, cutLength)} 
                 onClose={()=>setShowModal(false)}
                 onSetColor={(hex) => changeAxeColor(hex)}
                 onTextChanged={(type, note) => changeText(type, note)}
