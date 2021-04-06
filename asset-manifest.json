@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/dp_tds_app/static/css/main.64e848cd.chunk.css",
+    "main.js": "/dp_tds_app/static/js/main.18d62ca0.chunk.js",
+    "main.js.map": "/dp_tds_app/static/js/main.18d62ca0.chunk.js.map",
+    "runtime-main.js": "/dp_tds_app/static/js/runtime-main.1e02b441.js",
+    "runtime-main.js.map": "/dp_tds_app/static/js/runtime-main.1e02b441.js.map",
+    "static/css/2.150d169a.chunk.css": "/dp_tds_app/static/css/2.150d169a.chunk.css",
+    "static/js/2.422db8af.chunk.js": "/dp_tds_app/static/js/2.422db8af.chunk.js",
+    "static/js/2.422db8af.chunk.js.map": "/dp_tds_app/static/js/2.422db8af.chunk.js.map",
+    "static/js/3.b0a5dd0f.chunk.js": "/dp_tds_app/static/js/3.b0a5dd0f.chunk.js",
+    "static/js/3.b0a5dd0f.chunk.js.map": "/dp_tds_app/static/js/3.b0a5dd0f.chunk.js.map",
+    "index.html": "/dp_tds_app/index.html",
+    "static/css/2.150d169a.chunk.css.map": "/dp_tds_app/static/css/2.150d169a.chunk.css.map",
+    "static/css/main.64e848cd.chunk.css.map": "/dp_tds_app/static/css/main.64e848cd.chunk.css.map",
+    "static/js/2.422db8af.chunk.js.LICENSE.txt": "/dp_tds_app/static/js/2.422db8af.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.1e02b441.js",
+    "static/css/2.150d169a.chunk.css",
+    "static/js/2.422db8af.chunk.js",
+    "static/css/main.64e848cd.chunk.css",
+    "static/js/main.18d62ca0.chunk.js"
+  ]
+}
