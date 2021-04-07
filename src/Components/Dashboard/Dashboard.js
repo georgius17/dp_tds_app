@@ -13,6 +13,7 @@ import { DataOptions } from './DataOptions/DataOptions';
 import { TimeGenerator } from './TimeGenerator';
 import { ObjectConstants } from '../../Components/Constants/ObjectConstants';
 import { SensorConstants } from '../../Components/Constants/SensorConstants';
+import { ExportCSV } from './ExportCSV/ExportCSV';
 import classes from './Dashboard.module.css';
 
 const Dashboard = (props) => {
@@ -168,9 +169,7 @@ const Dashboard = (props) => {
                     {field: 'temp', headerName: SensorConstants.Values.temp_values},
                     {field: 'time', headerName: SensorConstants.Values.time_values},
                 ],
-                rows: [
-                    { id: 1, gps: 'Snow', tds: 'Jon', temp: 35, time: 20 },
-                ]                
+                rows: []                
             }
         }
         setObjects([...objects, newObject]);
@@ -247,11 +246,7 @@ const Dashboard = (props) => {
     const changeObjectData = (type, values, cutLength) => {
         let object = objects.find(x => x.id === selectedObjectID);
         if (values.length != cutLength && cutLength < values.length) {
-            console.log("CUTTING LENGTH TO:")
-            console.log(cutLength);
             values = values.slice(0, cutLength);
-            console.log("LENGTH OF CUTTED VALUES:");
-            console.log(values.length);
         }
         if (type === "X") {
             object.data.x = values;
@@ -339,6 +334,7 @@ const Dashboard = (props) => {
                             {!showUploadedData ? 'Zobrazit nahraná data' : 'Skrýt nahraná data'}
                         </Button>
                     }
+                    {sensorData.length !== 0 && <ExportCSV csvData={selectedFile} fileName={selectedFile[0].DATE} />}
                 </div>
             </Col>
 
@@ -359,6 +355,7 @@ const Dashboard = (props) => {
                             onExport={() => exportChart(o.id, o.objectType)}
                             onDataChange={() => changeDataModal(o.id)}
                         />
+                        
 
                         {o.objectType === ObjectConstants.Types.Graph && <canvas id={o.id} ref={o.ref} /> }
                         
